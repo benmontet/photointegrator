@@ -50,7 +50,9 @@ Credit
 Please cite
 
 Science 4 February 2011: Vol. 331 no. 6017 pp. 562-565 DOI:10.1126/science.1201274
+
 MNRAS (2012) 420 (2): 1630-1635. doi: 10.1111/j.1365-2966.2011.20151.x
+
 Montet et al. (in prep)
 
 when using this code towards a publication.
@@ -58,28 +60,35 @@ when using this code towards a publication.
 Overview
 --------
 
-The code included in this package facilitates so-called "photometric-dynamical" modeling.  
-This model is quite simple and this is reflected in the code base.  A N-body code provides 
-coordinates and the photometric code produces light curves based on coordinates.
+The code included in this package facilitates so-called "photometric-dynamical" 
+modeling. This model is quite simple and this is reflected in the code base. An 
+N-body code provides coordinates and the photometric code produces light curves 
+based on coordinates.
 
-Currently, the code integrates an arbitrary number of bodies, returning orbital elements
-and (optionally) a predicted light curve. The code includes the effects of general 
-relativity and finite light speed effects. It also includes the acceleration on each
-body in the system caused by the quadrupole moments of each other body in the system,
-which includes a spin distortion term and a tidal distortion term.
+Currently, the code integrates an arbitrary number of bodies, returning orbital 
+elements and (optionally) a predicted light curve. The code includes the effects 
+of general relativity and finite light speed effects. It also includes the 
+acceleration on each body in the system caused by the quadrupole moments of each 
+other body in the system, which includes a spin distortion term and a tidal 
+distortion term.
 
-**Limitations** The code does NOT include the acceleration produced by tidal damping.
-It also assumes all bodies are PERFECTLY ALIGNED, assuming the spin-orbit misalignment
-is zero for each body. This is currently under active development.
+**Limitations** The code does NOT include the acceleration produced by tidal 
+damping. It also assumes all bodies are PERFECTLY ALIGNED, assuming the 
+spin-orbit misalignment is zero for each body. This is currently under active 
+development.
 
-The code also, while allowing the effects of tidal distortion, creates light curves 
-based on spherical star models. All tidal effects are only included in the integration
-and calculation of orbital elements, not in the light curve generation. This is 
-generally a reasonable assumption, as the tidal effects in the light curve are 
-at present unobservable. This is not currently under active development.
+The code also, while allowing the effects of tidal distortion, creates light 
+curves based on spherical star models. All tidal effects are only included in 
+the integration and calculation of orbital elements, not in the light curve 
+generation. This is generally a reasonable assumption, as the tidal effects 
+in the light curve are at present unobservable. This is not currently under 
+active development.
+
+The code also does not include the potential effects of starspots.
 
 
-The source code (in the directory source/) should be all one needs to produce forward model light curves. Briefly:
+The source code (in the directory source/) should be all one needs to produce 
+forward model light curves. Briefly:
 
 A. Pal's code to compute overlap integrals:
 	elliptic.c
