@@ -3,7 +3,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*  N-body Bulirsch-Stoer integrator of Newton's equations                     */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* (c) 2013-5, Benjamin Montet, Josh Carter (btm at astro dot caltech dot edu  */
+/* (c) 2013-5, Benjamin Montet, Josh Carter (btm at astro dot caltech dot edu) */
 /*******************************************************************************/
 
 #include <stdlib.h>
@@ -135,18 +135,29 @@ void rhs(double r[][3], double v[][3], double ro[][3], double vo[][3],double * m
   register int i,j,k,m;
   double rr[N][N][3],rp[3],C[N],temp,temp2,temp3,temp5, temp1;
   double r5[N][N][3], tempr5, r1[N][N][3];
+  double rmag3[N][N], rmag1[N][N], etab[N][N], vdotv[N], rdot[N];
+    
 
   for (j = 0; j < N; j++) {
+      
+      vdotv[j] = r[j][0] * r[j][0] + r[j][1] * r[j][1] + r[j][2] * r[j][2];
+      rdot[j]  = sqrt(vdotv[j]);
+      
     for (i = 0; i < j; i++) {
       rij(r,mass,eta,i,j,rp);
       temp = norm3(rp); // ||r||^3
       tempr5 = norm5(rp); // ||r||^5
-      if (j == 1 && i ==0)
-        temp1 = norm1(rp); // || r ||^1
+      
+      temp1 = norm1(rp); // || r ||^1
 
       r1[i][j][0] = rp[0];
       r1[i][j][1] = rp[1];
       r1[i][j][2] = rp[2];
+        
+      rmag3[i][j] = (pow(temp1, 3));
+      rmag1[i][j] = temp1;
+        
+      etab[i][j] = mass[i]*mass[j]/((mass[i]+mass[j])*(mass[i]+mass[j]));
   
 
       r5[i][j][0] = (1/tempr5)*rp[0];
@@ -187,7 +198,6 @@ void rhs(double r[][3], double v[][3], double ro[][3], double vo[][3],double * m
      //   printf ("floats: %4.2f %4.2f %4.2f \n", vo[i][0], vo[i][1], vo[i][2]);
 
 
-    //put in a force here. Does it precess? Good. Double the separation. Does it precess by a factor of 2^5 less? Very good.
     
     for (j = 1; j <= i-1; j++) {
       vo[i][0] += (temp*mass[j])*rr[j][i][0];//A3P(vo[i],temp*mass[j]*rr[j][i]);
@@ -218,12 +228,6 @@ void rhs(double r[][3], double v[][3], double ro[][3], double vo[][3],double * m
 	//   printf ("floatk: %4.2f %4.2f %4.2f \n", vo[i][0], vo[i][1], vo[i][2]);
 
 
-	//	vo[i][0] += (mass[k]*mass[j]*temp3)*(r5[j][k][0])*-1e-9;
-	//	vo[i][1] += (mass[k]*mass[j]*temp3)*(r5[j][k][1])*-1e-9;
-	//	vo[i][2] += (mass[k]*mass[j]*temp3)*(r5[j][k][2])*-1e-9;
-
-	//   printf ("floatk: %4.2f %4.2f %4.2f \n", vo[i][0], vo[i][1], vo[i][2]);
-
 
       }
     }
@@ -237,30 +241,47 @@ void rhs(double r[][3], double v[][3], double ro[][3], double vo[][3],double * m
   double nu[2];
   double clite = 173.144633;
 
-  double etab = mass[0]*mass[1]/((mass[0]+mass[1])*(mass[0]+mass[1]));
-
+  
   nu[0] = 2*3.14159265358979/(Prot[0]);
   nu[1] = 2*3.14159265358979/(Prot[1]);
   
-  double vdotv = (r[1][0] * r[1][0] + r[1][1] *r[1][1] + r[1][2] * r[1][2]) ;
-  double rdot  = sqrt(vdotv);
-
-  //  printf ("floatk: %12.11f %12.11f %12.11f %12.11f %12.11f %12.11f %12.11f\n", ro[0][0], r1[1][0][0], r1[1][0][1], r1[1][0][2], r1[0][1][0], r1[0][1][1], r1[0][1][2]);
 
 
+   // printf ("floatk: %12.11f %12.11f %12.11f %12.11f\n", r1[0][1][0], r1[1][0][0], rmag3[1][0], temp1);
+
+
+    for (int i=1; i <N; i++) {
+        for (int j =0; j< i; j++) {
+            
+            vo[i][0] += C[j] * (1 + mass[i]/mass[j]) * (1*nu[j]*nu[j] + 6*mass[i]/rmag3[j][i]) * r1[j][i][0];
+            vo[i][1] += C[j] * (1 + mass[i]/mass[j]) * (1*nu[j]*nu[j] + 6*mass[i]/rmag3[j][i]) * r1[j][i][1];
+            vo[i][2] += C[j] * (1 + mass[i]/mass[j]) * (1*nu[j]*nu[j] + 6*mass[i]/rmag3[j][i]) * r1[j][i][2];
+            
+            vo[i][0] += C[i] * (1 + mass[j]/mass[i]) * (1*nu[i]*nu[i] + 6*mass[j]/rmag3[j][i]) * r1[j][i][0];
+            vo[i][1] += C[i] * (1 + mass[j]/mass[i]) * (1*nu[i]*nu[i] + 6*mass[j]/rmag3[j][i]) * r1[j][i][1];
+            vo[i][2] += C[i] * (1 + mass[j]/mass[i]) * (1*nu[i]*nu[i] + 6*mass[j]/rmag3[j][i]) * r1[j][i][2];
+            
+            
+            vo[i][0] += -1 * (mass[i] + mass[j])/(rmag1[j][i]*rmag1[j][i]*clite*clite) * (((1+3*etab[j][i])*ro[i][0]*ro[i][0] - 2*(2+etab[j][i])*(mass[j]+mass[i])/(rmag1[j][i]) - 1.5*etab[j][i]*vdotv[i])*r1[j][i][0]/rmag1[j][i] - 2*(2-etab[j][i])*rdot[i]*r[i][0]);
+            vo[i][1] += -1 * (mass[i] + mass[j])/(rmag1[j][i]*rmag1[j][i]*clite*clite) * (((1+3*etab[j][i])*ro[i][1]*ro[i][1] - 2*(2+etab[j][i])*(mass[j]+mass[i])/(rmag1[j][i]) - 1.5*etab[j][i]*vdotv[i])*r1[j][i][1]/rmag1[j][i] - 2*(2-etab[j][i])*rdot[i]*r[i][1]);
+            vo[i][2] += -1 * (mass[i] + mass[j])/(rmag1[j][i]*rmag1[j][i]*clite*clite) * (((1+3*etab[j][i])*ro[i][2]*ro[i][2] - 2*(2+etab[j][i])*(mass[j]+mass[i])/(rmag1[j][i]) - 1.5*etab[j][i]*vdotv[i])*r1[j][i][2]/rmag1[j][i] - 2*(2-etab[j][i])*rdot[i]*r[i][2]);
     
-    vo[1][0] += C[0] * (1 + mass[1]/mass[0]) * (1*nu[0]*nu[0] + 6*mass[1]/(pow(temp1, 3))) * r1[0][1][0];
-    vo[1][1] += C[0] * (1 + mass[1]/mass[0]) * (1*nu[0]*nu[0] + 6*mass[1]/(pow(temp1, 3))) * r1[0][1][1];
-    vo[1][2] += C[0] * (1 + mass[1]/mass[0]) * (1*nu[0]*nu[0] + 6*mass[1]/(pow(temp1, 3))) * r1[0][1][2];
-    
-    
-    vo[1][0] += C[1] * (1 + mass[0]/mass[1]) * (1*nu[1]*nu[1] + 6*mass[0]/(pow(temp1, 3))) * r1[0][1][0];
-    vo[1][1] += C[1] * (1 + mass[0]/mass[1]) * (1*nu[1]*nu[1] + 6*mass[0]/(pow(temp1, 3))) * r1[0][1][1];
-    vo[1][2] += C[1] * (1 + mass[0]/mass[1]) * (1*nu[1]*nu[1] + 6*mass[0]/(pow(temp1, 3))) * r1[0][1][2];
+        }
+        
+        for (int j=i+1; j<=N-1; j++) {
+            
+            vo[i][0] += C[j] * (1 + mass[i]/mass[j]) * (1*nu[j]*nu[j] + 6*mass[i]/rmag3[i][j]) * r1[i][j][0];
+            vo[i][1] += C[j] * (1 + mass[i]/mass[j]) * (1*nu[j]*nu[j] + 6*mass[i]/rmag3[i][j]) * r1[i][j][1];
+            vo[i][2] += C[j] * (1 + mass[i]/mass[j]) * (1*nu[j]*nu[j] + 6*mass[i]/rmag3[i][j]) * r1[i][j][2];
+            
+            vo[i][0] += C[i] * (1 + mass[j]/mass[i]) * (1*nu[i]*nu[i] + 6*mass[j]/rmag3[i][j]) * r1[i][j][0];
+            vo[i][1] += C[i] * (1 + mass[j]/mass[i]) * (1*nu[i]*nu[i] + 6*mass[j]/rmag3[i][j]) * r1[i][j][1];
+            vo[i][2] += C[i] * (1 + mass[j]/mass[i]) * (1*nu[i]*nu[i] + 6*mass[j]/rmag3[i][j]) * r1[i][j][2];
+            
+        }
+    }
+ 
 
-	     vo[1][0] += -1 * (mass[0] + mass[1])/(temp1*temp1*clite*clite) * (((1+3*etab)*ro[1][0]*ro[1][0] - 2*(2+etab)*(mass[0]+mass[1])/(temp1) - 1.5*etab*vdotv)*r1[0][1][0]/temp1 - 2*(2-etab)*rdot*r[1][0]);
-	    vo[1][1] += -1 * (mass[0] + mass[1])/(temp1*temp1*clite*clite) * (((1+3*etab)*ro[1][1]*ro[1][1] - 2*(2+etab)*(mass[0]+mass[1])/(temp1) - 1.5*etab*vdotv)*r1[0][1][1]/temp1 - 2*(2-etab)*rdot*r[1][1]);
-	   vo[1][2] += -1 * (mass[0] + mass[1])/(temp1*temp1*clite*clite) * (((1+3*etab)*ro[1][2]*ro[1][2] - 2*(2+etab)*(mass[0]+mass[1])/(temp1) - 1.5*etab*vdotv)*r1[0][1][2]/temp1 - 2*(2-etab)*rdot*r[1][2]);
 
   //    printf ("floatk: %12.11f %12.11f %12.11f \n", vo[1][0], vo[1][1], vo[1][2]);
  
